@@ -10,7 +10,7 @@ lemmatizer = WordNetLemmatizer()
 legal_words=words.words()
 tweets=[]
 all_tweets_id=[]
-f=open('/home/wangxv/Files/course/message_data/lab1/data/tweets.txt','r')
+f=open('./data/tweets.txt','r')
 for line in f:
     tweets.append(json.loads(line))
     all_tweets_id.append(int(tweets[-1]['tweetId']))
