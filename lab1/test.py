@@ -10,9 +10,12 @@ lemmatizer = WordNetLemmatizer()
 legal_words=words.words()
 tweets=[]
 all_tweets_id=[]
-f=open('./data/tweets.txt','r')
+f=open('/home/wangxv/Files/course/message_data/lab1/data/tweets.txt','r')
+line_num=1
 for line in f:
     tweets.append(json.loads(line))
+    tweets[-1]['tweetId']=line_num  
+    line_num+=1
     all_tweets_id.append(int(tweets[-1]['tweetId']))
 f.close()
 def deal_text(text:str):
@@ -39,13 +42,11 @@ for word in unique_sign_sequence:
         keyword_dict[word[0]].append(word[1])
     else:
         keyword_dict[word[0]]=[word[1]]
-def op_and(keyword1,keyword2):
+def op_and(list1,list2):
     result=[]
-    if(keyword1 not in keyword_dict or keyword2 not in keyword_dict):
+    if(list1==[] or list2==[]):
         return result 
     else:
-        list1=keyword_dict[keyword1]
-        list2=keyword_dict[keyword2]
         p1=0
         p2=0
         while(True):
@@ -61,13 +62,11 @@ def op_and(keyword1,keyword2):
                 else:
                     p1+=1
         return result
-def op_or(keyword1,keyword2):
+def op_or(list1,list2):
     result=[]
-    if(keyword1 not in keyword_dict and keyword2 not in keyword_dict):
+    if(list2==[] and list1==[]):
         return result 
     else:
-        list1=keyword_dict[keyword1]
-        list2=keyword_dict[keyword2]
         p1=0
         p2=0
         while(True):
@@ -82,18 +81,16 @@ def op_or(keyword1,keyword2):
         result+=list1[p1:]
         result+=list2[p2:]
         return result
-def op_not(keyword):
-    if(keyword not in keyword_dict):
-        return all_tweets_id
+def op_not(list0,list1=all_tweets_id):
+    if(list0==[]):
+        return list1
     else:
-        return [i for i in all_tweets_id if i not in keyword_dict[keyword]]
-def op_and_not(keyword1,keyword2):
+        return [i for i in list1 if i not in list0]
+def op_and_not(list1,list2):
     result=[]
-    if(keyword1 not in keyword_dict):
+    if(list1==[]):
         return result  
     else:
-        list1=keyword_dict[keyword1]
-        list2=keyword_dict[keyword2]
         p1=0
         p2=0
         while(p1<len(list1)):
@@ -111,22 +108,34 @@ def deal_word(word:str):
     word=re.sub(r'[^a-z]','',word)
     word=lemmatizer.lemmatize(word)
     return word
+def op(pre,beh,type):
+    if(type=='and'):
+        return op_and(pre,beh)
+    elif(type=='or'):
+        return op_or(pre,beh)
+    elif(type=='not'):#这个需要反过来
+        return op_not(beh,pre)
+    elif(type=='andnot'):
+        return op_and_not(pre,beh)
 while(True):
     try:
         query=input('input the query >>')
         queries=query.split(' ')
-        if(queries[0].lower()=='not'):
-            print('NOT查询')
-            print(op_not(deal_word(queries[1])))
-        elif(queries[1].lower()=='and' and queries[2].lower()=='not'):
-            print('AND NOT 查询')
-            print(op_and_not(deal_word(queries[0]),deal_word(queries[3])))
-        elif(queries[1].lower()=='or'):
-            print('OR查询')
-            print(op_or(deal_word(queries[0]),deal_word(queries[2])))
-        elif(queries[1].lower()=='and'):
-            print('AND查询')
-            print(op_and(deal_word(queries[0]),deal_word(queries[2])))
+        if(deal_word(queries[0])=='not'):
+            l=len(queries)
+            result=op_not(keyword_dict[deal_word(queries[1])])
+            for i in range(1,l//2):
+                ind=2*i
+                beh_list=keyword_dict[deal_word(queries[ind+1])]
+                result=op(result,beh_list,queries[ind])
+        else:
+            l=len(queries)
+            result=keyword_dict[deal_word(queries[0])]
+            for i in range((l//2)):
+                ind=2*i+1  
+                beh_list=keyword_dict[deal_word(queries[ind+1])]
+                result=op(result,beh_list,queries[ind])
+        print(result)
     except Exception as e:
         print('程序异常')
         pass 
